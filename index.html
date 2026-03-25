@@ -182,20 +182,76 @@
     .wa-btn { width: 100%; background: var(--verde-wa); color: white; border: none; border-radius: 14px; padding: 15px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 16px rgba(37,211,102,0.35); }
     .wa-btn:hover { background: #1da851; transform: translateY(-2px); }
 
-    /* ── BOTÓN FLOTANTE ── */
-    .float-cart { position: fixed; bottom: 22px; right: 18px; background: var(--rojo); color: white; border: none; border-radius: 50px; padding: 13px 18px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 7px; box-shadow: 0 6px 24px rgba(200,16,46,0.4); z-index: 150; transition: all 0.22s; }
+    /* ── BOTÓN FLOTANTE CARRITO ── */
+    .float-cart {
+      position: fixed; bottom: 22px; right: 18px;
+      background: var(--rojo); color: white; border: none; border-radius: 50px;
+      padding: 13px 18px; font-family: 'Nunito', sans-serif; font-weight: 800;
+      font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 6px 24px rgba(200,16,46,0.4); z-index: 150; transition: all 0.22s;
+    }
     .float-cart:hover { transform: scale(1.06); }
     .float-cart-badge { background: var(--amarillo); color: var(--texto); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 900; }
     .hidden { display: none !important; }
 
     /* ── TOAST ── */
-    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a1208; color: white; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; white-space: nowrap; }
+    .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a1208; color: white; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; white-space: nowrap; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @media (max-width: 480px) {
+    /* ── DEV FOOTER ── */
+    .dev-footer { background: #1a1208; padding: 22px 20px; text-align: center; }
+    .dev-footer-inner { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .dev-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+    .dev-name { font-family: 'Alfa Slab One', serif; font-size: 1.1rem; color: var(--amarillo); letter-spacing: 0.5px; }
+    .dev-tagline { font-size: 0.78rem; color: rgba(255,255,255,0.5); font-weight: 600; }
+    .dev-wa-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--verde-wa); color: white; border: none;
+      border-radius: 50px; padding: 9px 20px;
+      font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.88rem;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s; box-shadow: 0 3px 12px rgba(37,211,102,0.3); margin-top: 4px;
+    }
+    .dev-wa-btn:hover { background: #1da851; transform: scale(1.04); }
+    .dev-wa-icon { font-size: 1.1rem; }
+
+    /* ── DEV BADGE FLOTANTE ──
+       Desktop: izquierda abajo, convive con el carrito (derecha abajo)
+       Mobile: oculto — el footer ya muestra el botón, sin conflictos
+    ── */
+    .dev-badge {
+      position: fixed; bottom: 22px; left: 18px;
+      background: #1a1208; border: 1.5px solid var(--amarillo);
+      border-radius: 50px; padding: 8px 14px;
+      display: flex; align-items: center; gap: 8px;
+      z-index: 149; cursor: pointer; text-decoration: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3); transition: all 0.22s;
+      animation: badge-slide-in 0.5s 1s cubic-bezier(.4,0,.2,1) both;
+    }
+    @keyframes badge-slide-in {
+      from { transform: translateX(-120%); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+    .dev-badge:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+    .dev-badge-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .dev-badge-by   { font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+    .dev-badge-name { font-family: 'Alfa Slab One', serif; font-size: 0.82rem; color: var(--amarillo); }
+    .dev-badge-wa   { background: var(--verde-wa); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 599px) {
       .hero h2 { font-size: 1.25rem; }
       .products-grid, .promos-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
+      /* Badge dev oculto en mobile — ya está en el footer */
+      .dev-badge { display: none !important; }
+      /* Carrito flotante queda solo, sin nada que lo tape */
+      .float-cart { bottom: 22px; right: 18px; }
+    }
+    @media (min-width: 600px) {
+      /* Desktop: badge dev izq + carrito der, mismo nivel, sin colisión */
+      .float-cart { bottom: 22px; right: 18px; }
+      .dev-badge  { bottom: 22px; left:  18px; }
     }
   </style>
 </head>
@@ -395,6 +451,27 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- FOOTER DESARROLLADOR -->
+<footer class="dev-footer">
+  <div class="dev-footer-inner">
+    <span class="dev-label">⚡ App desarrollada por</span>
+    <span class="dev-name">Dario Andrada</span>
+    <span class="dev-tagline">Apps web para tu negocio · Rápido, simple y sin complicaciones</span>
+    <a class="dev-wa-btn" href="https://wa.me/541150610043?text=Hola%20Dario!%20Vi%20la%20app%20de%20Lo%20de%20Juan%20y%20me%20interesa%20algo%20similar%20para%20mi%20negocio%20%F0%9F%9A%80" target="_blank">
+      <span class="dev-wa-icon">📲</span> Quiero una app para mi negocio
+    </a>
+  </div>
+</footer>
+
+<!-- BADGE FLOTANTE DEV -->
+<a class="dev-badge" href="https://wa.me/541150610043?text=Hola%20Dario!%20Vi%20la%20app%20de%20Lo%20de%20Juan%20y%20me%20interesa%20algo%20similar%20para%20mi%20negocio%20%F0%9F%9A%80" target="_blank">
+  <div class="dev-badge-wa">📲</div>
+  <div class="dev-badge-text">
+    <span class="dev-badge-by">Dev by</span>
+    <span class="dev-badge-name">Dario Andrada</span>
+  </div>
+</a>
 
 <script>
   // ── CONFIG ──────────────────────────────────────
