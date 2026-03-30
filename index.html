@@ -1188,6 +1188,9 @@
         <button class="cat-btn" onclick="scrollToSection('panchos', this)">
           🌭 Panchos
         </button>
+        <button class="cat-btn" onclick="scrollToSection('bebidas', this)">
+          🥤 Bebidas
+        </button>
       </div>
     </div>
 
@@ -1576,6 +1579,7 @@
           sandwiches: "🥪",
           hamburguesas: "🍔",
           panchos: "🌭",
+          bebidas: "🥤",
         };
         return map[cat] || "🍽️";
       }
@@ -1617,6 +1621,7 @@
         "sandwiches",
         "hamburguesas",
         "panchos",
+        "bebidas",
       ];
       const CAT_LABELS = {
         pizzas: "🍕 Pizzas",
@@ -1625,6 +1630,7 @@
         sandwiches: "🥪 Sandwiches de Milanesa",
         hamburguesas: "🍔 Hamburguesas & Patinesas",
         panchos: "🌭 Panchos",
+        bebidas: "🥤 Bebidas",
       };
       const CAT_NOTES = {}; // Se llena dinámicamente desde la columna "nota"
 
@@ -1994,7 +2000,8 @@
                   (id === "milanesas" && t.includes("milan")) ||
                   (id === "sandwiches" && t.includes("sand")) ||
                   (id === "hamburguesas" && t.includes("hambur")) ||
-                  (id === "panchos" && t.includes("pancho"));
+                  (id === "panchos" && t.includes("pancho")) ||
+                  (id === "bebidas" && t.includes("bebida"));
                 b.classList.toggle("active", match);
               });
             });
@@ -2009,6 +2016,7 @@
           "sandwiches",
           "hamburguesas",
           "panchos",
+          "bebidas",
         ].forEach((s) => {
           const el =
             s === "promos"
