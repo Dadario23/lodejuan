@@ -238,6 +238,20 @@
     .dev-badge-name { font-family: 'Alfa Slab One', serif; font-size: 0.82rem; color: var(--amarillo); }
     .dev-badge-wa   { background: var(--verde-wa); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
 
+
+    /* ── LOADING SCREEN ── */
+    #loading-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 20px; gap: 16px;
+    }
+    .loading-spinner {
+      width: 48px; height: 48px; border: 4px solid var(--gris);
+      border-top-color: var(--rojo); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-weight: 700; color: var(--texto-light); font-size: 0.95rem; }
+    #load-error { display:none; background:#fff0f2; border:2px solid var(--rojo); border-radius:12px; padding:14px 16px; margin:16px; color:var(--rojo); font-weight:700; font-size:0.88rem; text-align:center; }
     /* ── RESPONSIVE ── */
     @media (max-width: 599px) {
       .hero h2 { font-size: 1.25rem; }
@@ -303,35 +317,12 @@
 </div>
 
 <!-- MENÚ PRINCIPAL -->
-<main class="menu-section">
-  <section id="sec-pizzas">
-    <h2 class="section-title">🍕 Pizzas</h2>
-    <div class="products-grid" id="grid-pizzas"></div>
-  </section>
-  <section id="sec-papas">
-    <h2 class="section-title">🍟 Papas Fritas</h2>
-    <div class="info-note">📦 Todas porciones grandes</div>
-    <div class="products-grid" id="grid-papas"></div>
-  </section>
-  <section id="sec-milanesas">
-    <h2 class="section-title">🥩 Milanesas al Plato</h2>
-    <div class="products-grid" id="grid-milanesas"></div>
-  </section>
-  <section id="sec-sandwiches">
-    <h2 class="section-title">🥪 Sandwiches de Milanesa</h2>
-    <div class="info-note">🍟 Todas traen papas</div>
-    <div class="products-grid" id="grid-sandwiches"></div>
-  </section>
-  <section id="sec-hamburguesas">
-    <h2 class="section-title">🍔 Hamburguesas &amp; Patinesas</h2>
-    <div class="info-note">🍟 Todas vienen con papas</div>
-    <div class="products-grid" id="grid-hamburguesas"></div>
-  </section>
-  <section id="sec-panchos">
-    <h2 class="section-title">🌭 Panchos</h2>
-    <div class="products-grid" id="grid-panchos"></div>
-  </section>
-</main>
+<div id="loading-screen">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Cargando el menú... 🍕</div>
+</div>
+<div id="load-error"></div>
+<main class="menu-section" id="menu-main"></main>
 
 <!-- BOTÓN FLOTANTE -->
 <button class="float-cart hidden" id="float-cart" onclick="openCart()">
@@ -474,97 +465,194 @@
 </a>
 
 <script>
-  // ── CONFIG ──────────────────────────────────────
-  const WHATSAPP_NUMBER = "5491122645843";
-  const PICKUP_ADDRESS  = "Concejal Baldomero Serrano 101";
-  const ALIAS           = "Cotito1622";
-  const TITULAR         = "Juan Carlos Coto González";
-  const PIZZERIA_NAME   = "Lo de Juan";
+  // ── GOOGLE SHEETS CONFIG ─────────────────────────
+  // URL base del Sheet publicado (CSV)
+  // Para obtener cada hoja: reemplazá el gid= con el de cada hoja
+  const SHEET_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnoFgz5GlvXWhtUApMc0l0zUwiKQkW7ngOoq7k_9UwNPZebIim0ZG7NKd0QxCqnIAiE55R4Z5fYSJQ/pub";
+  // gid de cada hoja (lo encontrás en la URL cuando hacés click en la hoja)
+  const GID_MENU   = "0";       // Hoja "menu"
+  const GID_PROMOS = "gid_promos_aqui"; // Hoja "promos" — reemplazá con el gid real
+  const GID_CONFIG = "gid_config_aqui"; // Hoja "config" — reemplazá con el gid real
 
-  // ── PROMOS ──────────────────────────────────────
-  const promos = [
-    { id:"promo1", name:"Muzza + Napolitana",           desc:"1 Pizza Muzzarela + 1 Pizza Napolitana. ¡La combo perfecta!",           price:20000, emoji:"🍕", savings:"Ahorrás $4.000" },
-    { id:"promo2", name:"Sandwich de Bondiola a la Pizza", desc:"Sandwich de bondiola con salsa de tomate, queso y orégano. Con papas.", price:9000,  emoji:"🥩", savings:null },
-    { id:"promo3", name:"2x Bondiola a la Pizza",       desc:"Dos sandwiches de bondiola a la pizza. ¡Ideal para compartir!",         price:16000, emoji:"🥩", savings:"Ahorrás $2.000" },
-    { id:"promo4", name:"2 Choripán con Papas",         desc:"Dos choripanes con chimichurri y una gran porción de papas fritas.",     price:10000, emoji:"🌭", savings:null },
-  ];
+  const PIZZERIA_NAME = "Lo de Juan";
 
-  // ── MENÚ ────────────────────────────────────────
-  const menu = {
-    pizzas: [
-      { id:"pz1",  name:"Muzzarela",   desc:"Salsa de tomate y abundante muzzarella.",                price:11000, emoji:"🍕" },
-      { id:"pz2",  name:"Especial",    desc:"La pizza especial de la casa.",                           price:14000, emoji:"🍕" },
-      { id:"pz3",  name:"Napolitana",  desc:"Tomate en rodajas, muzzarella, ajo y perejil.",           price:13000, emoji:"🍕" },
-      { id:"pz4",  name:"Palmito",     desc:"Palmitos, muzzarella y salsa de tomate.",                 price:14000, emoji:"🍕" },
-      { id:"pz5",  name:"Roquefort",   desc:"Queso roquefort cremoso y muzzarella.",                   price:14000, emoji:"🍕" },
-      { id:"pz6",  name:"Caprese",     desc:"Tomate, muzzarella fresca y albahaca.",                   price:13000, emoji:"🍕" },
-      { id:"pz7",  name:"Calabresa",   desc:"Longaniza calabresa, cebolla y muzzarella.",              price:14000, emoji:"🍕" },
-      { id:"pz8",  name:"Anchoas",     desc:"Anchoas, aceitunas y muzzarella. Bien sabrosa.",          price:15000, emoji:"🍕" },
-      { id:"pz9",  name:"Americana",   desc:"Pepperoni, muzzarella y salsa de tomate.",                price:14000, emoji:"🍕" },
-      { id:"pz10", name:"Huevo",       desc:"Huevo a la parrilla, muzzarella y salsa.",                price:13000, emoji:"🍕" },
-    ],
-    papas: [
-      { id:"pp1", name:"Papas Fritas",    desc:"Papas fritas solas. Porción grande y bien crocante.",  price:8000,  emoji:"🍟" },
-      { id:"pp2", name:"Con Cheddar",     desc:"Papas fritas bañadas en salsa cheddar.",               price:10000, emoji:"🍟" },
-      { id:"pp3", name:"Cheddar y Bacon", desc:"Papas fritas con cheddar fundido y tiras de bacon.",   price:12000, emoji:"🍟" },
-      { id:"pp4", name:"Salchipapas",     desc:"Papas fritas con rodajas de salchicha.",               price:11000, emoji:"🍟" },
-      { id:"pp5", name:"A la Pizza",      desc:"Papas con salsa de tomate, muzzarella y orégano.",     price:11000, emoji:"🍟" },
-    ],
-    milanesas: [
-      { id:"mi1", name:"Sola",       desc:"Milanesa al plato, bien crocante.",                         price:10000, emoji:"🥩" },
-      { id:"mi2", name:"A Caballo",  desc:"Milanesa con dos huevos fritos encima.",                    price:12000, emoji:"🥩" },
-      { id:"mi3", name:"Napolitana", desc:"Con salsa de tomate, jamón y queso gratinado.",             price:13500, emoji:"🥩" },
-      { id:"mi4", name:"Calabresa",  desc:"Con longaniza calabresa y muzzarella fundida.",             price:13500, emoji:"🥩" },
-      { id:"mi5", name:"Caprese",    desc:"Con tomate fresco, muzzarella y albahaca.",                 price:13500, emoji:"🥩" },
-    ],
-    sandwiches: [
-      { id:"sw1", name:"Sola",       desc:"Sandwich de milanesa sola. Trae papas.",                    price:15000, emoji:"🥪" },
-      { id:"sw2", name:"A Caballo",  desc:"Con huevo frito. Trae papas.",                              price:18000, emoji:"🥪" },
-      { id:"sw3", name:"Napolitana", desc:"Con salsa, jamón y queso. Trae papas.",                     price:18000, emoji:"🥪" },
-      { id:"sw4", name:"Roquefort",  desc:"Con queso roquefort. Trae papas.",                          price:18000, emoji:"🥪" },
-      { id:"sw5", name:"Caprese",    desc:"Con tomate, muzzarella y albahaca. Trae papas.",            price:18000, emoji:"🥪" },
-    ],
-    hamburguesas: [
-      { id:"hb1", name:"Burger Clásica",     desc:"Medallón de carne, lechuga y tomate. Trae papas.", price:8000, emoji:"🍔" },
-      { id:"hb2", name:"Burger Doble Queso", desc:"Dos medallones de carne con queso. Trae papas.",   price:9000, emoji:"🍔" },
-      { id:"hb3", name:"Burger Completa",    desc:"Carne, lechuga, tomate, jamón y queso. Trae papas.", price:9000, emoji:"🍔" },
-      { id:"hb4", name:"Patinesa",           desc:"Milanesa en pan, lechuga y tomate. Trae papas.",   price:8000, emoji:"🥪" },
-      { id:"hb5", name:"Patinesa Completa",  desc:"Milanesa, lechuga, tomate, jamón y queso. Trae papas.", price:9000, emoji:"🥪" },
-    ],
-    panchos: [
-      { id:"pa1", name:"Super Pancho", desc:"Pancho con aderezos y papas pay.",                       price:2500, emoji:"🌭" },
-      { id:"pa2", name:"Pancho Pizza", desc:"Pancho con salsa de tomate, queso y aceitunas.",         price:5000, emoji:"🌭" },
-    ],
-  };
+  // Fallback config (se sobreescribe si config hoja tiene datos)
+  let WHATSAPP_NUMBER = "5491122645843";
+  let PICKUP_ADDRESS  = "Concejal Baldomero Serrano 101";
+  let ALIAS           = "Cotito1622";
+  let TITULAR         = "Juan Carlos Coto González";
 
-  // ── ESTADO ──────────────────────────────────────
+  // ── ESTADO ───────────────────────────────────────
   let cart = {};
   let deliveryMode = 'delivery';
   let paymentMode  = 'efectivo';
+  let menuData     = {};   // { pizzas: [...], papas: [...], ... }
+  let promosData   = [];
 
-  // ── HELPERS ─────────────────────────────────────
+  // ── FETCH CSV HELPER ─────────────────────────────
+  async function fetchCSV(gid) {
+    const url = `${SHEET_BASE}?gid=${gid}&single=true&output=csv&t=${Date.now()}`;
+    const res  = await fetch(url);
+    const text = await res.text();
+    return parseCSV(text);
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+    return lines.slice(1).map(line => {
+      // Maneja comas dentro de comillas
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQuotes = !inQuotes; }
+        else if (line[i] === ',' && !inQuotes) { values.push(current.trim()); current = ''; }
+        else { current += line[i]; }
+      }
+      values.push(current.trim());
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (values[i] || '').replace(/^"|"$/g, '').trim(); });
+      return obj;
+    }).filter(row => row[headers[0]]); // Filtra filas vacías
+  }
+
+  // ── CARGAR DATOS ─────────────────────────────────
+  async function loadData() {
+    showLoading(true);
+    try {
+      // Cargar menú
+      const menuRows = await fetchCSV(GID_MENU);
+      menuData = {};
+      menuRows.forEach(row => {
+        const cat = row.categoria;
+        if (!cat) return;
+        if (!menuData[cat]) menuData[cat] = [];
+        menuData[cat].push({
+          id:    row.id,
+          name:  row.nombre,
+          desc:  row.descripcion,
+          price: parseInt(row.precio) || 0,
+          image: row.imagen || '',
+          nota:  row.nota  || '',
+          emoji: categoryEmoji(cat),
+        });
+      });
+
+      // Cargar promos (si el gid está configurado)
+      if (!GID_PROMOS.includes('aqui')) {
+        const promoRows = await fetchCSV(GID_PROMOS);
+        promosData = promoRows.map(row => ({
+          id:      row.id,
+          name:    row.nombre,
+          desc:    row.descripcion,
+          price:   parseInt(row.precio) || 0,
+          savings: row.ahorro || '',
+          image:   row.imagen || '',
+          emoji:   '🔥',
+        }));
+      } else {
+        // Promos de ejemplo hasta configurar el gid
+        promosData = [
+          { id:"promo1", name:"Muzza + Napolitana",          desc:"1 Pizza Muzzarela + 1 Pizza Napolitana.",       price:20000, savings:"Ahorrás $4.000", image:'', emoji:'🍕' },
+          { id:"promo2", name:"Sandwich Bondiola a la Pizza",desc:"Con papas fritas incluidas.",                   price:9000,  savings:'',             image:'', emoji:'🥩' },
+          { id:"promo3", name:"2x Bondiola a la Pizza",      desc:"Dos sandwiches, ideal para compartir.",         price:16000, savings:"Ahorrás $2.000",image:'', emoji:'🥩' },
+          { id:"promo4", name:"2 Choripán con Papas",        desc:"Con chimichurri y papas fritas.",               price:10000, savings:'',             image:'', emoji:'🌭' },
+        ];
+      }
+
+      // Cargar config (si el gid está configurado)
+      if (!GID_CONFIG.includes('aqui')) {
+        const configRows = await fetchCSV(GID_CONFIG);
+        configRows.forEach(row => {
+          if (row.clave === 'whatsapp')      WHATSAPP_NUMBER = row.valor;
+          if (row.clave === 'alias')         ALIAS           = row.valor;
+          if (row.clave === 'titular')       TITULAR         = row.valor;
+          if (row.clave === 'pickup_address') PICKUP_ADDRESS  = row.valor;
+        });
+      }
+
+      renderProducts();
+      updateCartUI();
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+      showError('No se pudo cargar el menú. Revisá tu conexión e intentá de nuevo.');
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  function categoryEmoji(cat) {
+    const map = { pizzas:'🍕', papas:'🍟', milanesas:'🥩', sandwiches:'🥪', hamburguesas:'🍔', panchos:'🌭' };
+    return map[cat] || '🍽️';
+  }
+
+  function showLoading(on) {
+    document.getElementById('loading-screen').style.display = on ? 'flex' : 'none';
+    document.getElementById('menu-main').style.display      = on ? 'none' : '';
+    document.querySelector('.promos-section').style.display = on ? 'none' : '';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('load-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // ── HELPERS ──────────────────────────────────────
   function getAllProducts() {
     const all = {};
-    promos.forEach(p => all[p.id] = p);
-    Object.values(menu).flat().forEach(p => all[p.id] = p);
+    promosData.forEach(p => all[p.id] = p);
+    Object.values(menuData).flat().forEach(p => all[p.id] = p);
     return all;
   }
   function getProduct(id) { return getAllProducts()[id] || null; }
 
-  // ── RENDER ──────────────────────────────────────
+  // ── RENDER ───────────────────────────────────────
+  const CAT_ORDER = ['pizzas','papas','milanesas','sandwiches','hamburguesas','panchos'];
+  const CAT_LABELS = { pizzas:'🍕 Pizzas', papas:'🍟 Papas Fritas', milanesas:'🥩 Milanesas al Plato', sandwiches:'🥪 Sandwiches de Milanesa', hamburguesas:'🍔 Hamburguesas & Patinesas', panchos:'🌭 Panchos' };
+  const CAT_NOTES  = {}; // Se llena dinámicamente desde la columna "nota"
+
   function renderProducts() {
     // Promos
     const gPromos = document.getElementById('grid-promos');
     gPromos.innerHTML = '';
-    promos.forEach(p => gPromos.appendChild(createPromoCard(p)));
+    promosData.forEach(p => gPromos.appendChild(createPromoCard(p)));
 
-    // Menú regular
-    const gridMap = { pizzas:'grid-pizzas', papas:'grid-papas', milanesas:'grid-milanesas', sandwiches:'grid-sandwiches', hamburguesas:'grid-hamburguesas', panchos:'grid-panchos' };
-    for (const [cat, gridId] of Object.entries(gridMap)) {
-      const grid = document.getElementById(gridId);
-      grid.innerHTML = '';
-      (menu[cat] || []).forEach(p => grid.appendChild(createCard(p)));
+    // Menú — reconstruir secciones dinámicamente
+    const menuMain = document.getElementById('menu-main');
+    // Limpiar secciones existentes excepto las que no son de menú
+    menuMain.innerHTML = '';
+
+    CAT_ORDER.forEach(cat => {
+      const items = menuData[cat];
+      if (!items || items.length === 0) return;
+
+      // Detectar nota de la categoría (la primera que tenga)
+      const nota = items.find(i => i.nota)?.nota || '';
+
+      const section = document.createElement('section');
+      section.id = `sec-${cat}`;
+      section.innerHTML = `
+        <h2 class="section-title">${CAT_LABELS[cat] || cat}</h2>
+        ${nota ? `<div class="info-note">ℹ️ ${nota}</div>` : ''}
+        <div class="products-grid" id="grid-${cat}"></div>
+      `;
+      menuMain.appendChild(section);
+
+      const grid = document.getElementById(`grid-${cat}`);
+      items.forEach(p => grid.appendChild(createCard(p)));
+    });
+
+    // Re-observar secciones para el nav activo
+    setupIntersectionObserver();
+  }
+
+  function imgOrEmoji(p, height = 120) {
+    if (p.image && p.image.startsWith('http')) {
+      return `<img src="${p.image}" alt="${p.name}" style="width:100%;height:${height}px;object-fit:cover;display:block;" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:${height}px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,#f2ece0,#d6ccba)\'>${p.emoji || '🍽️'}</div>'" />`;
     }
+    return `<div style="width:100%;height:${height}px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,#f2ece0,#d6ccba)">${p.emoji || '🍽️'}</div>`;
   }
 
   function createPromoCard(p) {
@@ -572,7 +660,7 @@
     card.className = 'promo-card';
     card.innerHTML = `
       <div class="promo-ribbon">🔥 PROMO</div>
-      <div class="promo-img-placeholder">${p.emoji}</div>
+      ${imgOrEmoji(p, 130)}
       <div class="promo-info">
         <div class="promo-name">${p.name}</div>
         <div class="promo-desc">${p.desc}</div>
@@ -593,7 +681,7 @@
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
-      <div class="product-img-placeholder">${p.emoji}</div>
+      ${imgOrEmoji(p, 120)}
       <div class="product-info">
         <div class="product-name">${p.name}</div>
         <div class="product-desc">${p.desc}</div>
@@ -620,17 +708,12 @@
          </div>`;
   }
 
-  // ── CARRITO ─────────────────────────────────────
-  function addToCart(id) {
-    cart[id] = (cart[id] || 0) + 1;
-    updateCtrl(id);
-    updateCartUI();
-  }
+  // ── CARRITO ──────────────────────────────────────
+  function addToCart(id) { cart[id] = (cart[id]||0)+1; updateCtrl(id); updateCartUI(); }
   function changeQty(id, delta) {
-    cart[id] = (cart[id] || 0) + delta;
-    if (cart[id] <= 0) delete cart[id];
-    updateCtrl(id);
-    updateCartUI();
+    cart[id] = (cart[id]||0)+delta;
+    if (cart[id]<=0) delete cart[id];
+    updateCtrl(id); updateCartUI();
   }
   function totalItems() { return Object.values(cart).reduce((a,b)=>a+b,0); }
   function totalPrice() {
@@ -643,33 +726,28 @@
     const total = totalItems();
     document.getElementById('cart-count').textContent = total;
     document.getElementById('float-count').textContent = total;
-    document.getElementById('float-cart').classList.toggle('hidden', total === 0);
+    document.getElementById('float-cart').classList.toggle('hidden', total===0);
 
     const cartItems  = document.getElementById('cart-items');
     const cartEmpty  = document.getElementById('cart-empty');
     const cartOpts   = document.getElementById('cart-options');
     const cartFooter = document.getElementById('cart-footer');
 
-    if (total === 0) {
-      cartEmpty.style.display = '';
-      cartItems.innerHTML = '';
-      cartOpts.style.display = 'none';
-      cartFooter.style.display = 'none';
+    if (total===0) {
+      cartEmpty.style.display=''; cartItems.innerHTML='';
+      cartOpts.style.display='none'; cartFooter.style.display='none';
       return;
     }
+    cartEmpty.style.display='none'; cartOpts.style.display=''; cartFooter.style.display='';
+    cartItems.innerHTML='';
 
-    cartEmpty.style.display = 'none';
-    cartOpts.style.display = '';
-    cartFooter.style.display = '';
-    cartItems.innerHTML = '';
-
-    for (const [id, qty] of Object.entries(cart)) {
-      const p = getProduct(id); if (!p) continue;
-      const sub = p.price * qty;
-      const row = document.createElement('div');
-      row.className = 'cart-item';
-      row.innerHTML = `
-        <span class="cart-item-emoji">${p.emoji}</span>
+    for (const [id,qty] of Object.entries(cart)) {
+      const p=getProduct(id); if(!p) continue;
+      const sub=p.price*qty;
+      const row=document.createElement('div');
+      row.className='cart-item';
+      row.innerHTML=`
+        <span class="cart-item-emoji">${p.emoji||'🍽️'}</span>
         <div class="cart-item-info">
           <div class="cart-item-name">${p.name}</div>
           <div class="cart-item-price">$${p.price.toLocaleString('es-AR')} c/u</div>
@@ -682,168 +760,155 @@
         <span class="cart-item-total">$${sub.toLocaleString('es-AR')}</span>`;
       cartItems.appendChild(row);
     }
-    document.getElementById('cart-total').textContent = `$${totalPrice().toLocaleString('es-AR')}`;
+    document.getElementById('cart-total').textContent=`$${totalPrice().toLocaleString('es-AR')}`;
   }
 
-  // ── PANEL ───────────────────────────────────────
-  function openCart() {
-    document.getElementById('cart-overlay').classList.add('open');
-    document.getElementById('cart-panel').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeCart() {
-    document.getElementById('cart-overlay').classList.remove('open');
-    document.getElementById('cart-panel').classList.remove('open');
-    document.body.style.overflow = '';
-  }
+  // ── PANEL ────────────────────────────────────────
+  function openCart()  { document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-panel').classList.add('open'); document.body.style.overflow='hidden'; }
+  function closeCart() { document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-panel').classList.remove('open'); document.body.style.overflow=''; }
 
-  // ── ENTREGA ─────────────────────────────────────
+  // ── ENTREGA ──────────────────────────────────────
   function selectDelivery(mode) {
-    deliveryMode = mode;
-    document.getElementById('opt-delivery').classList.toggle('selected', mode==='delivery');
-    document.getElementById('opt-retiro').classList.toggle('selected', mode==='retiro');
-    document.getElementById('delivery-form-section').classList.toggle('hidden', mode==='retiro');
-    document.getElementById('pickup-info-section').classList.toggle('hidden', mode==='delivery');
+    deliveryMode=mode;
+    document.getElementById('opt-delivery').classList.toggle('selected',mode==='delivery');
+    document.getElementById('opt-retiro').classList.toggle('selected',mode==='retiro');
+    document.getElementById('delivery-form-section').classList.toggle('hidden',mode==='retiro');
+    document.getElementById('pickup-info-section').classList.toggle('hidden',mode==='delivery');
     ['calle','numero'].forEach(clearError);
   }
 
-  // ── PAGO ────────────────────────────────────────
+  // ── PAGO ─────────────────────────────────────────
   function selectPayment(mode) {
-    paymentMode = mode;
-    document.getElementById('opt-efectivo').classList.toggle('selected', mode==='efectivo');
-    document.getElementById('opt-transferencia').classList.toggle('selected', mode==='transferencia');
-    document.getElementById('transfer-info-box').classList.toggle('hidden', mode==='efectivo');
+    paymentMode=mode;
+    document.getElementById('opt-efectivo').classList.toggle('selected',mode==='efectivo');
+    document.getElementById('opt-transferencia').classList.toggle('selected',mode==='transferencia');
+    document.getElementById('transfer-info-box').classList.toggle('hidden',mode==='efectivo');
   }
 
-  // ── VALIDACIÓN ──────────────────────────────────
-  function showError(f, msg) {
-    document.getElementById(`f-${f}`).classList.add('error');
-    const e = document.getElementById(`err-${f}`);
-    e.textContent = msg; e.classList.remove('hidden');
+  // ── VALIDACIÓN ───────────────────────────────────
+  function showError(f,msg) {
+    const inp=document.getElementById(`f-${f}`); if(!inp) return;
+    inp.classList.add('error');
+    const e=document.getElementById(`err-${f}`);
+    if(e){e.textContent=msg;e.classList.remove('hidden');}
   }
   function clearError(f) {
-    const inp = document.getElementById(`f-${f}`); if(!inp) return;
+    const inp=document.getElementById(`f-${f}`); if(!inp) return;
     inp.classList.remove('error');
     document.getElementById(`err-${f}`)?.classList.add('hidden');
   }
   function validateDelivery() {
-    let ok = true;
-    const checks = { calle:'Ingresá la calle', numero:'Ingresá el número' };
-    for (const [f, msg] of Object.entries(checks)) {
-      if (!document.getElementById(`f-${f}`).value.trim()) { showError(f, msg); ok=false; }
+    let ok=true;
+    const checks={calle:'Ingresá la calle',numero:'Ingresá el número'};
+    for(const [f,msg] of Object.entries(checks)){
+      if(!document.getElementById(`f-${f}`).value.trim()){showError(f,msg);ok=false;}
       else clearError(f);
     }
     return ok;
   }
-  ['calle','numero'].forEach(f => {
-    document.getElementById(`f-${f}`)?.addEventListener('input', ()=>clearError(f));
+  ['calle','numero'].forEach(f=>{
+    document.getElementById(`f-${f}`)?.addEventListener('input',()=>clearError(f));
   });
 
-  // ── COPIAR ALIAS ────────────────────────────────
+  // ── COPIAR ───────────────────────────────────────
   function copyText(text) {
-    navigator.clipboard.writeText(text).then(()=>showToast('✅ Alias copiado!')).catch(()=>{
-      const el = document.createElement('textarea');
-      el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy');
-      document.body.removeChild(el); showToast('✅ Alias copiado!');
-    });
+    navigator.clipboard.writeText(text)
+      .then(()=>showToast('✅ Alias copiado!'))
+      .catch(()=>{ const el=document.createElement('textarea'); el.value=text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast('✅ Alias copiado!'); });
   }
   function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'), 2200);
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
   }
 
   // ── WHATSAPP ─────────────────────────────────────
   function sendWhatsApp() {
-    if (totalItems()===0) return;
-    if (deliveryMode==='delivery' && !validateDelivery()) {
+    if(totalItems()===0) return;
+    if(deliveryMode==='delivery' && !validateDelivery()){
       document.getElementById('delivery-form-section').scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
-    const lines = [];
+    const lines=[];
     lines.push(`🍕 *Nuevo pedido - ${PIZZERIA_NAME}*`);
     lines.push('━━━━━━━━━━━━━━━━━━━');
-
-    for (const [id, qty] of Object.entries(cart)) {
-      const p = getProduct(id); if (!p) continue;
-      const isPromo = promos.some(pr => pr.id === id);
-      const tag = isPromo ? '🔥 PROMO' : p.emoji;
-      lines.push(`${isPromo ? '🔥' : p.emoji} *${p.name}*${isPromo ? ' (PROMO)' : ''} x${qty}  →  $${(p.price*qty).toLocaleString('es-AR')}`);
+    for(const [id,qty] of Object.entries(cart)){
+      const p=getProduct(id); if(!p) continue;
+      const isPromo=promosData.some(pr=>pr.id===id);
+      lines.push(`${isPromo?'🔥':p.emoji} *${p.name}*${isPromo?' (PROMO)':''} x${qty}  →  $${(p.price*qty).toLocaleString('es-AR')}`);
     }
-
     lines.push('━━━━━━━━━━━━━━━━━━━');
     lines.push(`💰 *TOTAL: $${totalPrice().toLocaleString('es-AR')}*`);
     lines.push('');
-
-    if (deliveryMode==='delivery') {
-      const calle       = document.getElementById('f-calle').value.trim();
-      const numero      = document.getElementById('f-numero').value.trim();
-      const entrecalles = document.getElementById('f-entrecalles').value.trim();
-      const barrio      = document.getElementById('f-barrio').value.trim();
+    if(deliveryMode==='delivery'){
+      const calle=document.getElementById('f-calle').value.trim();
+      const numero=document.getElementById('f-numero').value.trim();
+      const entrecalles=document.getElementById('f-entrecalles').value.trim();
+      const barrio=document.getElementById('f-barrio').value.trim();
       lines.push(`🛵 *Modalidad:* Delivery`);
       lines.push(`📍 *Dirección:* ${calle} ${numero}`);
-      if (entrecalles) lines.push(`🔀 *Entre calles:* ${entrecalles}`);
-      if (barrio)      lines.push(`🏘️ *Barrio:* ${barrio}`);
+      if(entrecalles) lines.push(`🔀 *Entre calles:* ${entrecalles}`);
+      if(barrio)      lines.push(`🏘️ *Barrio:* ${barrio}`);
     } else {
       lines.push(`🏪 *Modalidad:* Retiro en local`);
       lines.push(`📍 *Dirección del local:* ${PICKUP_ADDRESS}`);
     }
-
     lines.push('');
-    if (paymentMode==='efectivo') {
+    if(paymentMode==='efectivo'){
       lines.push(`💵 *Forma de pago:* Efectivo`);
     } else {
       lines.push(`📲 *Forma de pago:* Transferencia`);
       lines.push(`🏦 *Alias:* ${ALIAS}`);
       lines.push(`👤 *Titular:* ${TITULAR}`);
     }
-
-    const notes = document.getElementById('order-notes').value.trim();
-    if (notes) lines.push(`\n📝 *Aclaraciones:* ${notes}`);
+    const notes=document.getElementById('order-notes').value.trim();
+    if(notes) lines.push(`\n📝 *Aclaraciones:* ${notes}`);
     lines.push('');
     lines.push('_Pedido realizado desde la app de Lo de Juan_');
-
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`,'_blank');
   }
 
-  // ── NAV + SCROLL ─────────────────────────────────
+  // ── NAV ──────────────────────────────────────────
   function scrollToSection(cat, btn) {
     document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const target = cat==='promos' ? document.getElementById('sec-promos') : document.getElementById(`sec-${cat}`);
-    target?.scrollIntoView({behavior:'smooth', block:'start'});
+    target?.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
-  const secIds = ['promos','pizzas','papas','milanesas','sandwiches','hamburguesas','panchos'];
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const id = e.target.id.replace('sec-','');
-      document.querySelectorAll('.cat-btn').forEach(b => {
-        const t = b.textContent.toLowerCase();
-        const match =
-          (id==='promos'       && t.includes('promo'))  ||
-          (id==='pizzas'       && t.includes('pizza'))  ||
-          (id==='papas'        && t.includes('papa'))   ||
-          (id==='milanesas'    && t.includes('milan'))  ||
-          (id==='sandwiches'   && t.includes('sand'))   ||
-          (id==='hamburguesas' && t.includes('hambur')) ||
-          (id==='panchos'      && t.includes('pancho'));
-        b.classList.toggle('active', match);
+  let observer = null;
+  function setupIntersectionObserver() {
+    if(observer) observer.disconnect();
+    observer = new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(!e.isIntersecting) return;
+        const id=e.target.id.replace('sec-','');
+        document.querySelectorAll('.cat-btn').forEach(b=>{
+          const t=b.textContent.toLowerCase();
+          const match=
+            (id==='promos'       && t.includes('promo'))  ||
+            (id==='pizzas'       && t.includes('pizza'))  ||
+            (id==='papas'        && t.includes('papa'))   ||
+            (id==='milanesas'    && t.includes('milan'))  ||
+            (id==='sandwiches'   && t.includes('sand'))   ||
+            (id==='hamburguesas' && t.includes('hambur')) ||
+            (id==='panchos'      && t.includes('pancho'));
+          b.classList.toggle('active',match);
+        });
       });
+    },{rootMargin:'-35% 0px -55% 0px'});
+    ['promos','pizzas','papas','milanesas','sandwiches','hamburguesas','panchos'].forEach(s=>{
+      const el=s==='promos'?document.getElementById('sec-promos'):document.getElementById(`sec-${s}`);
+      if(el) observer.observe(el);
     });
-  }, { rootMargin:'-35% 0px -55% 0px' });
-  secIds.forEach(s => {
-    const el = s==='promos' ? document.getElementById('sec-promos') : document.getElementById(`sec-${s}`);
-    if (el) obs.observe(el);
-  });
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
   }
 
-  renderProducts();
-  updateCartUI();
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+
+  // ── INIT ─────────────────────────────────────────
+  loadData();
 </script>
 </body>
 </html>
